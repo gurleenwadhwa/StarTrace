@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { dataService } from "@/lib/dataService"
-import { generateMockConjunctions } from "@/lib/mockData"
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,13 +27,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(allConjunctions)
     }
 
-    console.log("[v0 API] No real conjunction data available, using mock data")
-    const mockConjunctions = generateMockConjunctions()
-    return NextResponse.json(mockConjunctions)
+    console.log("[v0 API] No real conjunction data available")
+    return NextResponse.json([])
   } catch (error) {
     console.error("[v0 API] Error in conjunctions API:", error)
-    console.log("[v0 API] Error occurred, falling back to mock data")
-    const mockConjunctions = generateMockConjunctions()
-    return NextResponse.json(mockConjunctions)
+    console.log("[v0 API] Error occurred, returning empty array")
+    return NextResponse.json([])
   }
 }

@@ -92,16 +92,6 @@ export const CANADIAN_SATELLITES: Satellite[] = [
     operator: "Canadian Armed Forces",
     purpose: "Maritime Surveillance",
   },
-  {
-    noradId: 44878,
-    name: "TELESAT TELSTAR 19V",
-    line1: "1 44878U 19071A   24100.50000000  .00000000  00000-0  00000-0 0  9999",
-    line2: "2 44878   0.0200 180.0000 0001000  90.0000 270.0000  1.00270000000000",
-    launchDate: "2018-07-22",
-    status: "active",
-    operator: "Telesat",
-    purpose: "Communications",
-  },
 ]
 
 // Generate more realistic TLE data based on current date
