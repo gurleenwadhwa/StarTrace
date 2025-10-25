@@ -141,9 +141,10 @@ export class DataService {
         `[v0 DataService] Fetching conjunctions for NORAD ${noradId} from Celestrak SOCRATES`
       );
 
-      // Use the correct SOCRATES table endpoint
+      // Use the correct SOCRATES table endpoint - dynamically search for the satellite
+      const satelliteName = this.getSatelliteNameForSOCRATES(noradId);
       const response = await axios.get(
-        `https://celestrak.org/SOCRATES/table-socrates.php?NAME=sapphire,&ORDER=MINRANGE&MAX=500`,
+        `https://celestrak.org/SOCRATES/table-socrates.php?NAME=${satelliteName},&ORDER=MINRANGE&MAX=500`,
         {
           headers: {
             Accept: "text/html",
@@ -171,7 +172,11 @@ export class DataService {
   /**
    * Parse SOCRATES HTML table data into conjunction events
    */
-  parseSOCRATESData(htmlData: string): ConjunctionEvent[] {
+  parseSOCRATESData(
+    htmlData: string,
+    primarySatelliteName: string = "SAPPHIRE",
+    primaryNoradId: number = 39088
+  ): ConjunctionEvent[] {
     const events: ConjunctionEvent[] = [];
 
     try {
@@ -231,16 +236,16 @@ export class DataService {
           const satelliteName = cells[2]?.trim() || "Unknown";
           const probability = this.parseScientificNotation(probabilityMatch[1]);
 
-          // Only process secondary satellites (not SAPPHIRE itself)
-          if (noradId !== 39088 && probability > 0) {
+          // Only process secondary satellites (not the primary satellite itself)
+          if (noradId !== primaryNoradId && probability > 0) {
             const event: ConjunctionEvent = {
-              id: `socrates-${noradId}-${currentTCA.replace(
+              id: `socrates-${primaryNoradId}-${noradId}-${currentTCA.replace(
                 /[:\s-]/g,
                 ""
               )}-${eventId++}`,
-              satellite1: "SAPPHIRE",
+              satellite1: primarySatelliteName,
               satellite2: satelliteName,
-              noradId1: 39088,
+              noradId1: primaryNoradId,
               noradId2: noradId,
               tca: new Date(currentTCA),
               minRange: currentMinRange,
@@ -274,6 +279,31 @@ export class DataService {
     } catch {
       return 0;
     }
+  }
+
+  /**
+   * Get satellite name for SOCRATES API search
+   */
+  private getSatelliteNameForSOCRATES(noradId: number): string {
+    const satelliteMap: Record<number, string> = {
+      39088: "sapphire",
+      27843: "scisat",
+      32382: "radarsat-2",
+      46484: "rcm-1",
+      46485: "rcm-2",
+      46486: "rcm-3",
+      43616: "m3msat",
+      26861: "anik-f1",
+      25740: "nimiq-1",
+      27632: "nimiq-2",
+      23846: "msat",
+      21726: "anik-e1",
+      21222: "anik-e2",
+      40895: "cassiope",
+      39089: "neossat",
+    };
+
+    return satelliteMap[noradId] || "unknown";
   }
 
   private calculateRiskLevel(
