@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import GlobeViewer from "./GlobeViewer";
 import Dashboard from "./Dashboard";
 import Header from "./Header";
-import TimeControls from "./TimeControls";
 import StatsOverlay from "./StatsOverlay";
 import InfoPanel from "./InfoPanel";
 import LoadingScreen from "./LoadingScreen";
-import { propagateSatellite, generateOrbitPath } from "@/lib/satelliteUtils";
+import {
+  propagateSatellite,
+  generateInertialOrbitPath,
+} from "@/lib/satelliteUtils";
 import type {
   SatellitePosition,
   OrbitPath,
@@ -25,47 +27,39 @@ export default function SatelliteViewer() {
     null
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [timeOffset, setTimeOffset] = useState(0); // minutes from now
-  const [isPlaying, setIsPlaying] = useState(true);
   const [showDashboard, setShowDashboard] = useState(true);
   const [loading, setLoading] = useState(true);
   const [satelliteData, setSatelliteData] = useState<Satellite[]>([]);
 
+  // Initial data fetch
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("[v0] Fetching satellite data from API...");
+        console.log("[SatelliteViewer] Fetching satellite data from API...");
 
         const satellitesResponse = await fetch("/api/satellites");
         const satellitesData: Satellite[] = await satellitesResponse.json();
-        console.log("[v0] Fetched satellites:", satellitesData.length);
+        console.log(
+          "[SatelliteViewer] Fetched satellites:",
+          satellitesData.length
+        );
         setSatelliteData(satellitesData);
 
-        console.log("[v0] Fetching conjunction data from API...");
+        console.log("[SatelliteViewer] Fetching conjunction data from API...");
         const conjunctionsResponse = await fetch("/api/conjunctions");
         const conjunctionsData: ConjunctionEvent[] =
           await conjunctionsResponse.json();
-        console.log("[v0] Fetched conjunctions:", conjunctionsData.length);
-        setConjunctions(conjunctionsData);
-
-        const currentDate = new Date();
-        const positions = satellitesData
-          .map((sat) => propagateSatellite(sat, currentDate))
-          .filter((pos): pos is SatellitePosition => pos !== null);
-
-        console.log("[v0] Generated positions:", positions.length);
-        setSatellites(positions);
-
-        const paths = satellitesData.map((sat) =>
-          generateOrbitPath(sat, currentDate)
+        console.log(
+          "[SatelliteViewer] Fetched conjunctions:",
+          conjunctionsData.length
         );
-        setOrbits(paths);
+        setConjunctions(conjunctionsData);
 
         setTimeout(() => {
           setLoading(false);
         }, 1500);
       } catch (error) {
-        console.error("[v0] Error fetching data:", error);
+        console.error("[SatelliteViewer] Error fetching data:", error);
         setLoading(false);
       }
     };
@@ -73,11 +67,12 @@ export default function SatelliteViewer() {
     fetchData();
   }, []);
 
+  // Update satellite positions in real-time
   useEffect(() => {
     if (loading || satelliteData.length === 0) return;
 
     const updatePositions = () => {
-      const currentDate = new Date(Date.now() + timeOffset * 60 * 1000);
+      const currentDate = new Date(); // Always use current real time
 
       const positions = satelliteData
         .map((sat) => propagateSatellite(sat, currentDate))
@@ -85,34 +80,31 @@ export default function SatelliteViewer() {
 
       setSatellites(positions);
 
-      if (selectedSatellite) {
+      // Generate orbital path only for selected satellite
+      if (selectedSatellite !== null) {
         const selectedSat = satelliteData.find(
           (s) => s.noradId === selectedSatellite
         );
         if (selectedSat) {
-          const path = generateOrbitPath(selectedSat, currentDate);
+          const path = generateInertialOrbitPath(selectedSat, currentDate);
           setOrbits([path]);
+          console.log(
+            `[SatelliteViewer] Generated orbital path for ${selectedSat.name}`
+          );
         }
       } else {
-        const paths = satelliteData.map((sat) =>
-          generateOrbitPath(sat, currentDate)
-        );
-        setOrbits(paths);
+        setOrbits([]);
       }
     };
 
+    // Initial update
     updatePositions();
-  }, [timeOffset, selectedSatellite, loading, satelliteData]);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const interval = setInterval(() => {
-      setTimeOffset((prev) => prev + 0.5);
-    }, 1000);
+    // Update positions every 5 seconds for real-time tracking
+    const interval = setInterval(updatePositions, 5000);
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [selectedSatellite, loading, satelliteData]);
 
   const handleSatelliteClick = useCallback((noradId: number) => {
     setSelectedSatellite((prev) => (prev === noradId ? null : noradId));
@@ -172,18 +164,9 @@ export default function SatelliteViewer() {
             conjunctions={conjunctions}
             selectedSatellite={selectedSatellite}
             onSatelliteClick={handleSatelliteClick}
-            timeOffset={timeOffset}
           />
 
           <StatsOverlay satellites={satellites} conjunctions={conjunctions} />
-
-          <TimeControls
-            timeOffset={timeOffset}
-            isPlaying={isPlaying}
-            onTimeChange={setTimeOffset}
-            onPlayPause={() => setIsPlaying(!isPlaying)}
-            onReset={() => setTimeOffset(0)}
-          />
 
           <InfoPanel />
         </div>

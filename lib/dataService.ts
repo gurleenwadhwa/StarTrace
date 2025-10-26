@@ -356,6 +356,74 @@ export class DataService {
   clearCache(): void {
     tleCache.clear();
   }
+
+  async fetchCanadianSubsetFromCelestrak(): Promise<Satellite[]> {
+    const targetIds = [
+      39088, 27843, 32382, 46484, 46485, 46486, 43616, 26861, 25740, 27632,
+      23846, 21726, 21222, 40895, 39089,
+    ];
+
+    console.log(
+      `[v0 DataService] Fetching ${targetIds.length} Canadian satellites individually from CelesTrak...`
+    );
+
+    const satellites: Satellite[] = [];
+    const now = Date.now();
+
+    // Fetch each satellite individually as batch API doesn't work reliably
+    for (const noradId of targetIds) {
+      try {
+        const url = `https://celestrak.org/NORAD/elements/gp.php?CATNR=${noradId}&FORMAT=tle`;
+        console.log(`[v0 DataService] Fetching NORAD ${noradId}...`);
+
+        const { data } = await axios.get(url, {
+          timeout: 10000,
+          headers: {
+            "User-Agent": "Satellite-Conjunction-Analysis/1.0",
+          },
+        });
+
+        if (data && typeof data === "string" && data.length > 50) {
+          // Parse TLE format: 3 lines per satellite (name, line1, line2)
+          const lines = data.trim().split("\n");
+          if (lines.length >= 3) {
+            const name = lines[0].trim();
+            const line1 = lines[1].trim();
+            const line2 = lines[2].trim();
+
+            const satellite: Satellite = {
+              noradId,
+              name,
+              line1,
+              line2,
+              status: "active",
+            };
+
+            satellites.push(satellite);
+            tleCache.set(noradId, { data: satellite, timestamp: now });
+            console.log(`[v0 DataService] ✓ Fetched ${name}`);
+          }
+        } else {
+          console.warn(
+            `[v0 DataService] ✗ No data returned for NORAD ${noradId}`
+          );
+        }
+
+        // Small delay to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      } catch (err) {
+        console.error(
+          `[v0 DataService] ✗ Error fetching NORAD ${noradId}:`,
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+
+    console.log(
+      `[v0 DataService] Successfully fetched ${satellites.length} out of ${targetIds.length} satellites`
+    );
+    return satellites;
+  }
 }
 
 export const dataService = DataService.getInstance();

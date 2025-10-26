@@ -32,11 +32,13 @@ export interface ConjunctionEvent {
   riskLevel: "low" | "medium" | "high";
 }
 
+export interface OrbitPoint {
+  lat: number;
+  lng: number;
+  alt: number;
+}
+
 export interface OrbitPath {
   noradId: number;
-  positions: Array<{
-    lat: number;
-    lng: number;
-    alt: number;
-  }>;
+  positions: OrbitPoint[];
 }
