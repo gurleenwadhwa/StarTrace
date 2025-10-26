@@ -1,19 +1,44 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Satellite, AlertTriangle, Activity, Globe } from "lucide-react"
-import type { SatellitePosition, ConjunctionEvent } from "@/lib/types"
+import { motion } from "framer-motion";
+import { Satellite, AlertTriangle, Activity, Globe } from "lucide-react";
+import type { SatellitePosition, ConjunctionEvent } from "@/lib/types";
 
 interface StatsOverlayProps {
-  satellites: SatellitePosition[]
-  conjunctions: ConjunctionEvent[]
+  satellites: SatellitePosition[];
+  conjunctions: ConjunctionEvent[];
 }
 
-export default function StatsOverlay({ satellites, conjunctions }: StatsOverlayProps) {
-  const activeSatellites = satellites.length
-  const highRiskConjunctions = conjunctions.filter((c) => c.riskLevel === "high").length
-  const averageAltitude = satellites.reduce((sum, sat) => sum + sat.altitude, 0) / satellites.length || 0
-  const averageVelocity = satellites.reduce((sum, sat) => sum + sat.velocity, 0) / satellites.length || 0
+export default function StatsOverlay({
+  satellites,
+  conjunctions,
+}: StatsOverlayProps) {
+  const activeSatellites = satellites?.length || 0;
+  const highRiskConjunctions =
+    conjunctions?.filter((c) => c.riskLevel === "high").length || 0;
+  const totalConjunctions = conjunctions?.length || 0;
+
+  // Calculate more meaningful metrics
+  const averageAltitude =
+    satellites?.length > 0
+      ? satellites.reduce((sum, sat) => sum + sat.altitude, 0) /
+        satellites.length
+      : 0;
+  const averageVelocity =
+    satellites?.length > 0
+      ? satellites.reduce((sum, sat) => sum + sat.velocity, 0) /
+        satellites.length
+      : 0;
+
+  // Calculate urgent conjunctions (high risk within 24 hours)
+  const now = new Date();
+  const urgentConjunctions =
+    conjunctions?.filter((conj) => {
+      if (!conj.tca || !(conj.tca instanceof Date)) return false;
+      const hoursUntil =
+        (conj.tca.getTime() - now.getTime()) / (1000 * 60 * 60);
+      return hoursUntil <= 24 && conj.riskLevel === "high";
+    }).length || 0;
 
   const stats = [
     {
@@ -24,23 +49,23 @@ export default function StatsOverlay({ satellites, conjunctions }: StatsOverlayP
     },
     {
       icon: AlertTriangle,
+      label: "Total Conjunctions",
+      value: totalConjunctions,
+      color: "text-orange-500",
+    },
+    {
+      icon: AlertTriangle,
       label: "High Risk Events",
       value: highRiskConjunctions,
       color: "text-destructive",
     },
     {
-      icon: Globe,
-      label: "Avg Altitude",
-      value: `${averageAltitude.toFixed(0)} km`,
-      color: "text-accent",
-    },
-    {
       icon: Activity,
-      label: "Avg Velocity",
-      value: `${averageVelocity.toFixed(2)} km/s`,
-      color: "text-secondary",
+      label: "Urgent (24h)",
+      value: urgentConjunctions,
+      color: "text-red-600",
     },
-  ]
+  ];
 
   return (
     <motion.div
@@ -69,5 +94,5 @@ export default function StatsOverlay({ satellites, conjunctions }: StatsOverlayP
         </motion.div>
       ))}
     </motion.div>
-  )
+  );
 }
