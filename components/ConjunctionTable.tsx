@@ -1,90 +1,134 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { motion } from "framer-motion"
-import { AlertTriangle, Clock, TrendingUp } from "lucide-react"
-import { format } from "date-fns"
-import type { ConjunctionEvent } from "@/lib/types"
-import { CANADIAN_SATELLITES } from "@/lib/canadianSatellites"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useMemo } from "react";
+import { motion } from "framer-motion";
+import { AlertTriangle, Clock, TrendingUp } from "lucide-react";
+import { format } from "date-fns";
+import type { ConjunctionEvent } from "@/lib/types";
+import { CANADIAN_SATELLITES } from "@/lib/canadianSatellites";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface ConjunctionTableProps {
-  conjunctions: ConjunctionEvent[]
-  onSatelliteSelect: (noradId: number) => void
+  conjunctions: ConjunctionEvent[];
+  onSatelliteSelect: (noradId: number) => void;
 }
 
-export default function ConjunctionTable({ conjunctions, onSatelliteSelect }: ConjunctionTableProps) {
+export default function ConjunctionTable({
+  conjunctions,
+  onSatelliteSelect,
+}: ConjunctionTableProps) {
+  // Risk level priority for sorting
+  const getRiskPriority = (level: string): number => {
+    switch (level) {
+      case "high":
+        return 3;
+      case "medium":
+        return 2;
+      case "low":
+        return 1;
+      default:
+        return 0;
+    }
+  };
+
   // Group conjunctions by satellite
   const conjunctionsBySatellite = useMemo(() => {
-    const grouped: Record<number, ConjunctionEvent[]> = {}
-    
+    const grouped: Record<number, ConjunctionEvent[]> = {};
+
     // Initialize with all Canadian satellites
-    CANADIAN_SATELLITES.forEach(sat => {
-      grouped[sat.noradId] = []
-    })
-    
+    CANADIAN_SATELLITES.forEach((sat) => {
+      grouped[sat.noradId] = [];
+    });
+
     // Group conjunctions by satellite
-    conjunctions.forEach(conj => {
-      const sat1 = CANADIAN_SATELLITES.find(s => s.noradId === conj.noradId1)
-      const sat2 = CANADIAN_SATELLITES.find(s => s.noradId === conj.noradId2)
-      
+    conjunctions.forEach((conj) => {
+      const sat1 = CANADIAN_SATELLITES.find((s) => s.noradId === conj.noradId1);
+      const sat2 = CANADIAN_SATELLITES.find((s) => s.noradId === conj.noradId2);
+
       if (sat1) {
-        if (!grouped[conj.noradId1]) grouped[conj.noradId1] = []
-        grouped[conj.noradId1].push(conj)
+        if (!grouped[conj.noradId1]) grouped[conj.noradId1] = [];
+        grouped[conj.noradId1].push(conj);
       }
       if (sat2) {
-        if (!grouped[conj.noradId2]) grouped[conj.noradId2] = []
-        grouped[conj.noradId2].push(conj)
+        if (!grouped[conj.noradId2]) grouped[conj.noradId2] = [];
+        grouped[conj.noradId2].push(conj);
       }
-    })
-    
-    return grouped
-  }, [conjunctions])
+    });
+
+    // Sort conjunctions for each satellite by risk level (high to low) and then by probability (descending)
+    Object.keys(grouped).forEach((noradId) => {
+      grouped[Number(noradId)].sort((a, b) => {
+        const riskDiff =
+          getRiskPriority(b.riskLevel) - getRiskPriority(a.riskLevel);
+        if (riskDiff !== 0) return riskDiff;
+        return b.probability - a.probability;
+      });
+    });
+
+    return grouped;
+  }, [conjunctions]);
 
   const getRiskColor = (level: string) => {
     switch (level) {
       case "high":
-        return "text-destructive"
+        return "text-destructive";
       case "medium":
-        return "text-yellow-500"
+        return "text-yellow-500";
       default:
-        return "text-muted-foreground"
+        return "text-muted-foreground";
     }
-  }
+  };
 
   const getRiskBg = (level: string) => {
     switch (level) {
       case "high":
-        return "bg-destructive/10 border-destructive"
+        return "bg-destructive/10 border-destructive";
       case "medium":
-        return "bg-yellow-500/10 border-yellow-500"
+        return "bg-yellow-500/10 border-yellow-500";
       default:
-        return "bg-muted border-border"
+        return "bg-muted border-border";
     }
-  }
+  };
 
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-border bg-card p-3">
         <div className="flex items-center gap-2 text-sm">
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <span className="font-medium text-foreground font-mono">{conjunctions.length} Active Conjunctions</span>
+          <span className="font-medium text-foreground font-mono">
+            {conjunctions.length} Active Conjunctions
+          </span>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">Monitoring potential collision events</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Monitoring potential collision events
+        </p>
       </div>
 
       <Accordion type="single" collapsible className="w-full">
         {CANADIAN_SATELLITES.map((satellite) => {
-          const satelliteConjunctions = conjunctionsBySatellite[satellite.noradId] || []
-          
+          const satelliteConjunctions =
+            conjunctionsBySatellite[satellite.noradId] || [];
+
           return (
-            <AccordionItem key={satellite.noradId} value={`satellite-${satellite.noradId}`}>
+            <AccordionItem
+              key={satellite.noradId}
+              value={`satellite-${satellite.noradId}`}
+            >
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center justify-between w-full pr-4">
                   <div className="flex items-center gap-3">
                     <div className="text-left">
-                      <div className="font-semibold text-foreground font-mono">{satellite.name}</div>
-                      <div className="text-xs text-muted-foreground">{satellite.purpose}</div>
+                      <div className="font-semibold text-foreground font-mono">
+                        {satellite.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {satellite.purpose}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -105,13 +149,23 @@ export default function ConjunctionTable({ conjunctions, onSatelliteSelect }: Co
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className={`rounded-lg border p-3 ${getRiskBg(conj.riskLevel)}`}
+                        className={`rounded-lg border p-3 ${getRiskBg(
+                          conj.riskLevel
+                        )}`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <AlertTriangle className={`h-3 w-3 ${getRiskColor(conj.riskLevel)}`} />
-                              <span className={`text-xs font-bold uppercase ${getRiskColor(conj.riskLevel)}`}>
+                              <AlertTriangle
+                                className={`h-3 w-3 ${getRiskColor(
+                                  conj.riskLevel
+                                )}`}
+                              />
+                              <span
+                                className={`text-xs font-bold uppercase ${getRiskColor(
+                                  conj.riskLevel
+                                )}`}
+                              >
                                 {conj.riskLevel} Risk
                               </span>
                             </div>
@@ -123,7 +177,9 @@ export default function ConjunctionTable({ conjunctions, onSatelliteSelect }: Co
                               >
                                 {conj.satellite1}
                               </button>
-                              <div className="text-xs text-muted-foreground">↕</div>
+                              <div className="text-xs text-muted-foreground">
+                                ↕
+                              </div>
                               <button
                                 onClick={() => onSatelliteSelect(conj.noradId2)}
                                 className="block text-sm font-semibold text-foreground hover:text-primary transition-colors font-mono"
@@ -140,7 +196,9 @@ export default function ConjunctionTable({ conjunctions, onSatelliteSelect }: Co
                               <Clock className="h-3 w-3" />
                               <span>TCA</span>
                             </div>
-                            <p className="mt-1 text-xs font-medium text-foreground font-mono">{format(conj.tca, "MMM dd, HH:mm")}</p>
+                            <p className="mt-1 text-xs font-medium text-foreground font-mono">
+                              {format(conj.tca, "MMM dd, HH:mm")}
+                            </p>
                           </div>
 
                           <div>
@@ -148,27 +206,35 @@ export default function ConjunctionTable({ conjunctions, onSatelliteSelect }: Co
                               <TrendingUp className="h-3 w-3" />
                               <span>Min Range</span>
                             </div>
-                            <p className="mt-1 text-xs font-medium text-foreground font-mono">{conj.minRange.toFixed(2)} km</p>
+                            <p className="mt-1 text-xs font-medium text-foreground font-mono">
+                              {conj.minRange.toFixed(2)} km
+                            </p>
                           </div>
                         </div>
 
                         <div className="mt-2 rounded bg-background/50 p-2">
-                          <div className="text-xs text-muted-foreground">Collision Probability</div>
-                          <div className="mt-1 text-sm font-bold text-foreground font-mono">{(conj.probability * 100).toExponential(2)}%</div>
+                          <div className="text-xs text-muted-foreground">
+                            Collision Probability
+                          </div>
+                          <div className="mt-1 text-sm font-bold text-foreground font-mono">
+                            {(conj.probability * 100).toExponential(2)}%
+                          </div>
                         </div>
                       </motion.div>
                     ))}
                   </div>
                 ) : (
                   <div className="py-4 text-center">
-                    <p className="text-sm text-muted-foreground font-mono">No conjunctions detected</p>
+                    <p className="text-sm text-muted-foreground font-mono">
+                      No conjunctions detected
+                    </p>
                   </div>
                 )}
               </AccordionContent>
             </AccordionItem>
-          )
+          );
         })}
       </Accordion>
     </div>
-  )
+  );
 }

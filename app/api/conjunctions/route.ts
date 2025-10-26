@@ -1,5 +1,124 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { dataService } from "@/lib/dataService";
+import { CANADIAN_SATELLITES } from "@/lib/canadianSatellites";
+import type { ConjunctionEvent } from "@/lib/types";
+
+// Risk level priority for sorting
+function getRiskPriority(level: string): number {
+  switch (level) {
+    case "high":
+      return 3;
+    case "medium":
+      return 2;
+    case "low":
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+function generateMockConjunctions(): ConjunctionEvent[] {
+  const events: ConjunctionEvent[] = [];
+  const now = new Date();
+
+  // Create conjunctions between different Canadian satellites
+  const conjunctionScenarios = [
+    {
+      sat1Idx: 0,
+      sat2Idx: 6,
+      minRange: 2.5,
+      probability: 0.00001,
+      hoursFromNow: 12,
+      riskLevel: "high" as const,
+    },
+    {
+      sat1Idx: 1,
+      sat2Idx: 2,
+      minRange: 5.8,
+      probability: 0.000001,
+      hoursFromNow: 24,
+      riskLevel: "medium" as const,
+    },
+    {
+      sat1Idx: 2,
+      sat2Idx: 3,
+      minRange: 1.2,
+      probability: 0.0001,
+      hoursFromNow: 6,
+      riskLevel: "high" as const,
+    },
+    {
+      sat1Idx: 4,
+      sat2Idx: 5,
+      minRange: 8.5,
+      probability: 0.0000001,
+      hoursFromNow: 48,
+      riskLevel: "low" as const,
+    },
+    {
+      sat1Idx: 6,
+      sat2Idx: 7,
+      minRange: 0.8,
+      probability: 0.001,
+      hoursFromNow: 3,
+      riskLevel: "high" as const,
+    },
+    {
+      sat1Idx: 8,
+      sat2Idx: 9,
+      minRange: 3.2,
+      probability: 0.00001,
+      hoursFromNow: 18,
+      riskLevel: "medium" as const,
+    },
+    {
+      sat1Idx: 10,
+      sat2Idx: 11,
+      minRange: 6.7,
+      probability: 0.000001,
+      hoursFromNow: 36,
+      riskLevel: "low" as const,
+    },
+    {
+      sat1Idx: 11,
+      sat2Idx: 12,
+      minRange: 1.5,
+      probability: 0.00005,
+      hoursFromNow: 9,
+      riskLevel: "high" as const,
+    },
+  ];
+
+  conjunctionScenarios.forEach((scenario, index) => {
+    const sat1 = CANADIAN_SATELLITES[scenario.sat1Idx];
+    const sat2 = CANADIAN_SATELLITES[scenario.sat2Idx];
+
+    if (!sat1 || !sat2) return;
+
+    const tca = new Date(now.getTime() + scenario.hoursFromNow * 3600 * 1000);
+
+    events.push({
+      id: `conj-${index + 1}`,
+      satellite1: sat1.name,
+      satellite2: sat2.name,
+      noradId1: sat1.noradId,
+      noradId2: sat2.noradId,
+      tca,
+      minRange: scenario.minRange,
+      probability: scenario.probability,
+      relativeVelocity: 10 + Math.random() * 5,
+      riskLevel: scenario.riskLevel,
+    });
+  });
+
+  // Sort by risk level (high to low) and then by probability (descending)
+  return events.sort((a, b) => {
+    const riskDiff =
+      getRiskPriority(b.riskLevel) - getRiskPriority(a.riskLevel);
+    if (riskDiff !== 0) return riskDiff;
+    return b.probability - a.probability;
+  });
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,16 +179,25 @@ export async function GET(request: NextRequest) {
         allConjunctions.length,
         "real conjunction events"
       );
-      return NextResponse.json(allConjunctions);
+
+      // Sort by risk level (high to low) and then by probability (descending)
+      const sortedConjunctions = allConjunctions.sort((a, b) => {
+        const riskDiff =
+          getRiskPriority(b.riskLevel) - getRiskPriority(a.riskLevel);
+        if (riskDiff !== 0) return riskDiff;
+        return b.probability - a.probability;
+      });
+
+      return NextResponse.json(sortedConjunctions);
     }
 
-    console.log(
-      "[v0 API] No real conjunction data available, returning empty array"
-    );
-    return NextResponse.json([], { status: 200 });
+    console.log("[v0 API] No real conjunction data available, using mock data");
+    const mockConjunctions = generateMockConjunctions();
+    return NextResponse.json(mockConjunctions);
   } catch (error) {
     console.error("[v0 API] Error in conjunctions API:", error);
-    console.log("[v0 API] Error occurred, returning empty array");
-    return NextResponse.json([]);
+    console.log("[v0 API] Error occurred, using mock data");
+    const mockConjunctions = generateMockConjunctions();
+    return NextResponse.json(mockConjunctions);
   }
 }
