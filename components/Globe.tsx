@@ -87,10 +87,9 @@ export default function Globe({
       .pointRadius((d: any) => (d.isSelected ? 0.8 : 0.5))
       .pointLabel((d: any) => {
         return `
-          <div style="background: rgba(10, 15, 35, 0.95); padding: 12px; border-radius: 8px; border: 1px solid rgb(59, 130, 246); color: rgb(240, 250, 255); font-family: system-ui; max-width: 250px;">
+          <div style="background: rgba(10, 15, 35, 0.95); padding: 12px; border-radius: 8px; border: 1px solid rgb(59, 130, 246); color: rgb(240, 250, 255); font-family: 'Courier New', monospace; max-width: 250px;">
             <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; color: rgb(59, 130, 246);">${d.name}</div>
             <div style="font-size: 12px; line-height: 1.6;">
-              <div><strong>NORAD ID:</strong> ${d.noradId}</div>
               <div><strong>Altitude:</strong> ${(d.alt * 6371).toFixed(1)} km</div>
               <div><strong>Velocity:</strong> ${d.velocity.toFixed(2)} km/s</div>
               <div><strong>Position:</strong> ${d.lat.toFixed(2)}°, ${d.lng.toFixed(2)}°</div>
