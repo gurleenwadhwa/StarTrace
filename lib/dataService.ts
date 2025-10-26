@@ -130,21 +130,25 @@ export class DataService {
   }
 
   /**
-   * Fetch conjunction data from Celestrak SOCRATES
+   * Fetch conjunction data from Celestrak SOCRATES using satellite name
    * Returns HTML table data that needs to be parsed
    */
   async fetchConjunctionsFromCelestrak(
-    noradId: number
+    satelliteName: string,
+    noradId?: number
   ): Promise<string | null> {
     try {
       console.log(
-        `[v0 DataService] Fetching conjunctions for NORAD ${noradId} from Celestrak SOCRATES`
+        `[v0 DataService] Fetching conjunctions for ${satelliteName}${
+          noradId ? ` (NORAD ${noradId})` : ""
+        } from Celestrak SOCRATES`
       );
 
-      // Use the correct SOCRATES table endpoint - dynamically search for the satellite
-      const satelliteName = this.getSatelliteNameForSOCRATES(noradId);
+      // Use the satellite name directly for SOCRATES query
       const response = await axios.get(
-        `https://celestrak.org/SOCRATES/table-socrates.php?NAME=${satelliteName},&ORDER=MINRANGE&MAX=500`,
+        `https://celestrak.org/SOCRATES/table-socrates.php?NAME=${encodeURIComponent(
+          satelliteName
+        )},&ORDER=MINRANGE&MAX=500`,
         {
           headers: {
             Accept: "text/html",
@@ -162,7 +166,7 @@ export class DataService {
       return response.data;
     } catch (error) {
       console.error(
-        `[v0 DataService] Error fetching conjunctions for NORAD ${noradId}:`,
+        `[v0 DataService] Error fetching conjunctions for ${satelliteName}:`,
         error
       );
       return null;
@@ -174,8 +178,8 @@ export class DataService {
    */
   parseSOCRATESData(
     htmlData: string,
-    primarySatelliteName: string = "SAPPHIRE",
-    primaryNoradId: number = 39088
+    primarySatelliteName: string = "Sapphire",
+    primaryNoradId: number = 39089
   ): ConjunctionEvent[] {
     const events: ConjunctionEvent[] = [];
 
@@ -281,31 +285,6 @@ export class DataService {
     }
   }
 
-  /**
-   * Get satellite name for SOCRATES API search
-   */
-  private getSatelliteNameForSOCRATES(noradId: number): string {
-    const satelliteMap: Record<number, string> = {
-      39088: "sapphire",
-      27843: "scisat",
-      32382: "radarsat-2",
-      46484: "rcm-1",
-      46485: "rcm-2",
-      46486: "rcm-3",
-      43616: "m3msat",
-      26861: "anik-f1",
-      25740: "nimiq-1",
-      27632: "nimiq-2",
-      23846: "msat",
-      21726: "anik-e1",
-      21222: "anik-e2",
-      40895: "cassiope",
-      39089: "neossat",
-    };
-
-    return satelliteMap[noradId] || "unknown";
-  }
-
   private calculateRiskLevel(
     minRange: number,
     probability: number
@@ -358,9 +337,10 @@ export class DataService {
   }
 
   async fetchCanadianSubsetFromCelestrak(): Promise<Satellite[]> {
+    // Match NORAD IDs from CANADIAN_SATELLITES list
     const targetIds = [
-      39088, 27843, 32382, 46484, 46485, 46486, 43616, 26861, 25740, 27632,
-      23846, 21726, 21222, 40895, 39089,
+      27843, 32382, 46484, 46485, 46486, 43616, 25951, 27511, 24874, 20780,
+      21263, 40895, 39147, 39089,
     ];
 
     console.log(

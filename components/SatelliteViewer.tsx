@@ -46,7 +46,13 @@ export default function SatelliteViewer() {
         setSatelliteData(satellitesData);
 
         console.log("[SatelliteViewer] Fetching conjunction data from API...");
-        const conjunctionsResponse = await fetch("/api/conjunctions");
+        // Add cache-busting timestamp to ensure fresh data
+        const conjunctionsResponse = await fetch("/api/conjunctions", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
         const conjunctionsData: ConjunctionEvent[] =
           await conjunctionsResponse.json();
         console.log(
@@ -65,6 +71,39 @@ export default function SatelliteViewer() {
     };
 
     fetchData();
+  }, []);
+
+  // Periodic refresh of conjunction data (every 5 minutes)
+  useEffect(() => {
+    const fetchConjunctions = async () => {
+      try {
+        console.log("[SatelliteViewer] Refreshing conjunction data...");
+        // Add cache-busting timestamp to ensure fresh data
+        const conjunctionsResponse = await fetch("/api/conjunctions", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+        const conjunctionsData: ConjunctionEvent[] =
+          await conjunctionsResponse.json();
+        console.log(
+          "[SatelliteViewer] Refreshed conjunctions:",
+          conjunctionsData.length
+        );
+        setConjunctions(conjunctionsData);
+      } catch (error) {
+        console.error(
+          "[SatelliteViewer] Error refreshing conjunctions:",
+          error
+        );
+      }
+    };
+
+    // Set up interval to refresh every 5 minutes (300000 ms)
+    const interval = setInterval(fetchConjunctions, 300000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Update satellite positions in real-time

@@ -126,34 +126,17 @@ export async function GET(request: NextRequest) {
   try {
     console.log("[v0 API] Fetching conjunction data...");
 
-    // Canadian satellites to fetch conjunction data for
-    const canadianSatellites = [
-      { noradId: 39088, name: "SAPPHIRE" },
-      { noradId: 27843, name: "SCISAT-1" },
-      { noradId: 32382, name: "RADARSAT-2" },
-      { noradId: 46484, name: "RCM-1" },
-      { noradId: 46485, name: "RCM-2" },
-      { noradId: 46486, name: "RCM-3" },
-      { noradId: 43616, name: "M3MSat" },
-      { noradId: 26861, name: "Anik F1" },
-      { noradId: 25740, name: "Nimiq 1" },
-      { noradId: 27632, name: "Nimiq 2" },
-      { noradId: 23846, name: "MSAT" },
-      { noradId: 21726, name: "Anik E1" },
-      { noradId: 21222, name: "Anik E2" },
-      { noradId: 40895, name: "CASSIOPE" },
-      { noradId: 39089, name: "NEOSSat" },
-    ];
-
+    // Use the actual CANADIAN_SATELLITES list directly
     const allConjunctions: any[] = [];
 
-    // Fetch conjunctions for each Canadian satellite
-    for (const satellite of canadianSatellites) {
+    // Fetch conjunctions for each Canadian satellite using their actual names
+    for (const satellite of CANADIAN_SATELLITES) {
       try {
         console.log(
           `[v0 API] Fetching conjunctions for ${satellite.name} (NORAD ${satellite.noradId})`
         );
         const csvData = await dataService.fetchConjunctionsFromCelestrak(
+          satellite.name,
           satellite.noradId
         );
         if (csvData) {
@@ -192,16 +175,38 @@ export async function GET(request: NextRequest) {
         return a.minRange - b.minRange;
       });
 
-      return NextResponse.json(sortedConjunctions);
+      // Set cache control headers to prevent any caching
+      return NextResponse.json(sortedConjunctions, {
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
     }
 
     console.log("[v0 API] No real conjunction data available, using mock data");
     const mockConjunctions = generateMockConjunctions();
-    return NextResponse.json(mockConjunctions);
+    return NextResponse.json(mockConjunctions, {
+      headers: {
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     console.error("[v0 API] Error in conjunctions API:", error);
     console.log("[v0 API] Error occurred, using mock data");
     const mockConjunctions = generateMockConjunctions();
-    return NextResponse.json(mockConjunctions);
+    return NextResponse.json(mockConjunctions, {
+      headers: {
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   }
 }
