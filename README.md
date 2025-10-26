@@ -50,7 +50,7 @@ The application monitors ~30 active Canadian satellites including:
 1. Clone the repository:
    \`\`\`bash
    git clone <repository-url>
-   cd canadian-satellite-viz
+   cd Canadian Satellite Visualization
    \`\`\`
 
 2. Install dependencies:
@@ -115,7 +115,7 @@ The application includes built-in fallback data for all Canadian satellites, ens
 ## Project Structure
 
 \`\`\`
-canadian-satellite-viz/
+Canadian Satellite Visualization/
 ├── app/
 │ ├── api/ # Next.js API routes
 │ ├── layout.tsx # Root layout
