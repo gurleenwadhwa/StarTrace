@@ -50,7 +50,7 @@ The application monitors ~30 active Canadian satellites including:
 1. Clone the repository:
    \`\`\`bash
    git clone <repository-url>
-   cd Canadian Satellite Visualization
+   cd canadian-satellite-visualization
    \`\`\`
 
 2. Install dependencies:

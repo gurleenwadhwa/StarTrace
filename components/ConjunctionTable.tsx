@@ -227,19 +227,7 @@ export default function ConjunctionTable({
                           </div>
                         </div>
 
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                          <div>
-                            <div className="text-xs text-muted-foreground">
-                              Dilution Threshold
-                            </div>
-                            <p className="mt-1 text-xs font-medium text-foreground font-mono">
-                              {conj.dilutionThreshold
-                                ? conj.dilutionThreshold.toFixed(3)
-                                : "N/A"}{" "}
-                              km
-                            </p>
-                          </div>
-
+                        <div className="mt-2">
                           <div>
                             <div className="text-xs text-muted-foreground">
                               Relative Speed

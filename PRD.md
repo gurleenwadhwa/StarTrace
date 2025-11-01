@@ -270,7 +270,7 @@ The Canadian Satellite Conjunction Analysis Platform is a real-time web applicat
 ### 7.1 Application Structure
 
 ```
-Canadian Satellite Visualization/
+canadian-satellite-visualization/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API Routes
 │   │   ├── conjunctions/

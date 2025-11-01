@@ -19,6 +19,7 @@ export default function SatelliteDetails({ satellite, onClose }: SatelliteDetail
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-lg font-bold text-foreground font-mono">{satellite.name}</h3>
+          <p className="text-sm text-muted-foreground">NORAD ID: {satellite.noradId}</p>
         </div>
         <button
           onClick={onClose}
