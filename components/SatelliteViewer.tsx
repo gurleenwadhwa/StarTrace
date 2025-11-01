@@ -1,124 +1,170 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import GlobeViewer from "./GlobeViewer"
-import Dashboard from "./Dashboard"
-import Header from "./Header"
-import TimeControls from "./TimeControls"
-import StatsOverlay from "./StatsOverlay"
-import InfoPanel from "./InfoPanel"
-import LoadingScreen from "./LoadingScreen"
-import { CANADIAN_SATELLITES } from "@/lib/canadianSatellites"
-import { propagateSatellite, generateOrbitPath } from "@/lib/satelliteUtils"
-import type { SatellitePosition, OrbitPath, ConjunctionEvent, Satellite } from "@/lib/types"
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import GlobeViewer from "./GlobeViewer";
+import Dashboard from "./Dashboard";
+import Header from "./Header";
+import StatsOverlay from "./StatsOverlay";
+import InfoPanel from "./InfoPanel";
+import LoadingScreen from "./LoadingScreen";
+import {
+  propagateSatellite,
+  generateInertialOrbitPath,
+} from "@/lib/satelliteUtils";
+import type {
+  SatellitePosition,
+  OrbitPath,
+  ConjunctionEvent,
+  Satellite,
+} from "@/lib/types";
 
 export default function SatelliteViewer() {
-  const [satellites, setSatellites] = useState<SatellitePosition[]>([])
-  const [orbits, setOrbits] = useState<OrbitPath[]>([])
-  const [conjunctions, setConjunctions] = useState<ConjunctionEvent[]>([])
-  const [selectedSatellite, setSelectedSatellite] = useState<number | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [timeOffset, setTimeOffset] = useState(0) // minutes from now
-  const [isPlaying, setIsPlaying] = useState(true)
-  const [showDashboard, setShowDashboard] = useState(true)
-  const [loading, setLoading] = useState(true)
-  const [satelliteData, setSatelliteData] = useState<Satellite[]>([])
+  const [satellites, setSatellites] = useState<SatellitePosition[]>([]);
+  const [orbits, setOrbits] = useState<OrbitPath[]>([]);
+  const [conjunctions, setConjunctions] = useState<ConjunctionEvent[]>([]);
+  const [selectedSatellite, setSelectedSatellite] = useState<number | null>(
+    null
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDashboard, setShowDashboard] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [satelliteData, setSatelliteData] = useState<Satellite[]>([]);
 
+  // Initial data fetch
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("[v0] Fetching satellite data from API...")
+        console.log("[SatelliteViewer] Fetching satellite data from API...");
 
-        const satellitesResponse = await fetch("/api/satellites")
-        const satellitesData: Satellite[] = await satellitesResponse.json()
-        console.log("[v0] Fetched satellites:", satellitesData.length)
-        setSatelliteData(satellitesData)
+        const satellitesResponse = await fetch("/api/satellites");
+        const satellitesData: Satellite[] = await satellitesResponse.json();
+        console.log(
+          "[SatelliteViewer] Fetched satellites:",
+          satellitesData.length
+        );
+        setSatelliteData(satellitesData);
 
-        console.log("[v0] Fetching conjunction data from API...")
-        const conjunctionsResponse = await fetch("/api/conjunctions")
-        const conjunctionsData: ConjunctionEvent[] = await conjunctionsResponse.json()
-        console.log("[v0] Fetched conjunctions:", conjunctionsData.length)
-        setConjunctions(conjunctionsData)
-
-        const currentDate = new Date()
-        const positions = satellitesData
-          .map((sat) => propagateSatellite(sat, currentDate))
-          .filter((pos): pos is SatellitePosition => pos !== null)
-
-        console.log("[v0] Generated positions:", positions.length)
-        setSatellites(positions)
-
-        const paths = satellitesData.map((sat) => generateOrbitPath(sat, currentDate))
-        setOrbits(paths)
+        console.log("[SatelliteViewer] Fetching conjunction data from API...");
+        // Add cache-busting timestamp to ensure fresh data
+        const conjunctionsResponse = await fetch("/api/conjunctions", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+        const conjunctionsData: ConjunctionEvent[] =
+          await conjunctionsResponse.json();
+        console.log(
+          "[SatelliteViewer] Fetched conjunctions:",
+          conjunctionsData.length
+        );
+        setConjunctions(conjunctionsData);
 
         setTimeout(() => {
-          setLoading(false)
-        }, 1500)
+          setLoading(false);
+        }, 1500);
       } catch (error) {
-        console.error("[v0] Error fetching data:", error)
-        setLoading(false)
+        console.error("[SatelliteViewer] Error fetching data:", error);
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
+  // Periodic refresh of conjunction data (every 5 minutes)
   useEffect(() => {
-    if (loading || satelliteData.length === 0) return
+    const fetchConjunctions = async () => {
+      try {
+        console.log("[SatelliteViewer] Refreshing conjunction data...");
+        // Add cache-busting timestamp to ensure fresh data
+        const conjunctionsResponse = await fetch("/api/conjunctions", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
+        const conjunctionsData: ConjunctionEvent[] =
+          await conjunctionsResponse.json();
+        console.log(
+          "[SatelliteViewer] Refreshed conjunctions:",
+          conjunctionsData.length
+        );
+        setConjunctions(conjunctionsData);
+      } catch (error) {
+        console.error(
+          "[SatelliteViewer] Error refreshing conjunctions:",
+          error
+        );
+      }
+    };
+
+    // Set up interval to refresh every 5 minutes (300000 ms)
+    const interval = setInterval(fetchConjunctions, 300000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update satellite positions in real-time
+  useEffect(() => {
+    if (loading || satelliteData.length === 0) return;
 
     const updatePositions = () => {
-      const currentDate = new Date(Date.now() + timeOffset * 60 * 1000)
+      const currentDate = new Date(); // Always use current real time
 
       const positions = satelliteData
         .map((sat) => propagateSatellite(sat, currentDate))
-        .filter((pos): pos is SatellitePosition => pos !== null)
+        .filter((pos): pos is SatellitePosition => pos !== null);
 
-      setSatellites(positions)
+      setSatellites(positions);
 
-      if (selectedSatellite) {
-        const selectedSat = satelliteData.find((s) => s.noradId === selectedSatellite)
+      // Generate orbital path only for selected satellite
+      if (selectedSatellite !== null) {
+        const selectedSat = satelliteData.find(
+          (s) => s.noradId === selectedSatellite
+        );
         if (selectedSat) {
-          const path = generateOrbitPath(selectedSat, currentDate)
-          setOrbits([path])
+          const path = generateInertialOrbitPath(selectedSat, currentDate);
+          setOrbits([path]);
+          console.log(
+            `[SatelliteViewer] Generated orbital path for ${selectedSat.name}`
+          );
         }
       } else {
-        const paths = satelliteData.map((sat) => generateOrbitPath(sat, currentDate))
-        setOrbits(paths)
+        setOrbits([]);
       }
-    }
+    };
 
-    updatePositions()
-  }, [timeOffset, selectedSatellite, loading, satelliteData])
+    // Initial update
+    updatePositions();
 
-  useEffect(() => {
-    if (!isPlaying) return
+    // Update positions every 5 seconds for real-time tracking
+    const interval = setInterval(updatePositions, 5000);
 
-    const interval = setInterval(() => {
-      setTimeOffset((prev) => prev + 0.5)
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [isPlaying])
+    return () => clearInterval(interval);
+  }, [selectedSatellite, loading, satelliteData]);
 
   const handleSatelliteClick = useCallback((noradId: number) => {
-    setSelectedSatellite((prev) => (prev === noradId ? null : noradId))
-  }, [])
+    setSelectedSatellite((prev) => (prev === noradId ? null : noradId));
+  }, []);
 
   const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query)
-  }, [])
+    setSearchQuery(query);
+  }, []);
 
   const filteredSatellites = satellites.filter(
-    (sat) => sat.name.toLowerCase().includes(searchQuery.toLowerCase()) || sat.noradId.toString().includes(searchQuery),
-  )
+    (sat) =>
+      sat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sat.noradId.toString().includes(searchQuery)
+  );
 
   const selectedSatelliteData = selectedSatellite
-    ? CANADIAN_SATELLITES.find((s) => s.noradId === selectedSatellite)
-    : null
+    ? satelliteData.find((s) => s.noradId === selectedSatellite)
+    : null;
 
   if (loading) {
-    return <LoadingScreen />
+    return <LoadingScreen />;
   }
 
   return (
@@ -157,22 +203,13 @@ export default function SatelliteViewer() {
             conjunctions={conjunctions}
             selectedSatellite={selectedSatellite}
             onSatelliteClick={handleSatelliteClick}
-            timeOffset={timeOffset}
           />
 
           <StatsOverlay satellites={satellites} conjunctions={conjunctions} />
-
-          <TimeControls
-            timeOffset={timeOffset}
-            isPlaying={isPlaying}
-            onTimeChange={setTimeOffset}
-            onPlayPause={() => setIsPlaying(!isPlaying)}
-            onReset={() => setTimeOffset(0)}
-          />
 
           <InfoPanel />
         </div>
       </div>
     </div>
-  )
+  );
 }

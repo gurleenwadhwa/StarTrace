@@ -7,7 +7,7 @@ A real-time visualization platform for tracking Canadian satellites in orbit, mo
 - **3D Interactive Globe**: Powered by Globe.gl and Three.js, displaying satellite positions, orbital paths, and conjunction alerts
 - **Real-time Tracking**: Live satellite position updates using SGP4/SDP4 orbit propagation
 - **Conjunction Analysis**: Monitor potential collision events with risk assessment and probability calculations
-- **Comprehensive Dashboard**: 
+- **Comprehensive Dashboard**:
   - Searchable satellite list with detailed information
   - Conjunction events table with time-to-closest-approach
   - Analytics charts showing risk distribution and timelines
@@ -34,7 +34,7 @@ The application monitors ~30 active Canadian satellites including:
 - **Charts**: Recharts
 - **Animations**: Framer Motion
 - **Styling**: Tailwind CSS with custom space theme
-- **Data Sources**: 
+- **Data Sources**:
   - Space-Track.org for TLE data (optional)
   - Celestrak SOCRATES for conjunction data (optional)
   - Built-in fallback data for offline operation
@@ -48,25 +48,26 @@ The application monitors ~30 active Canadian satellites including:
 ### Installation
 
 1. Clone the repository:
-\`\`\`bash
-git clone <repository-url>
-cd canadian-satellite-viz
-\`\`\`
+   \`\`\`bash
+   git clone <repository-url>
+   cd canadian-satellite-visualization
+   \`\`\`
 
 2. Install dependencies:
-\`\`\`bash
-npm install
-\`\`\`
+   \`\`\`bash
+   npm install
+   \`\`\`
 
 3. (Optional) Configure Space-Track.org credentials:
+
    - Copy `.env.example` to `.env.local`
    - Sign up at https://www.space-track.org/auth/createAccount
    - Add your credentials to `.env.local`
 
 4. Run the development server:
-\`\`\`bash
-npm run dev
-\`\`\`
+   \`\`\`bash
+   npm run dev
+   \`\`\`
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
@@ -99,6 +100,7 @@ The application provides several API endpoints:
 ### Primary Sources (Optional)
 
 1. **Space-Track.org**: Official TLE data from US Space Command
+
    - Requires free account registration
    - Provides most accurate orbital elements
 
@@ -113,32 +115,31 @@ The application includes built-in fallback data for all Canadian satellites, ens
 ## Project Structure
 
 \`\`\`
-canadian-satellite-viz/
+Canadian Satellite Visualization/
 ├── app/
-│   ├── api/              # Next.js API routes
-│   ├── layout.tsx        # Root layout
-│   ├── page.tsx          # Main page
-│   └── globals.css       # Global styles
+│ ├── api/ # Next.js API routes
+│ ├── layout.tsx # Root layout
+│ ├── page.tsx # Main page
+│ └── globals.css # Global styles
 ├── components/
-│   ├── Globe.tsx         # 3D globe visualization
-│   ├── GlobeViewer.tsx   # Globe wrapper component
-│   ├── SatelliteViewer.tsx # Main viewer component
-│   ├── Dashboard.tsx     # Dashboard container
-│   ├── SatelliteList.tsx # Satellite list component
-│   ├── ConjunctionTable.tsx # Conjunction events table
-│   ├── RiskChart.tsx     # Analytics charts
-│   ├── SatelliteDetails.tsx # Satellite info panel
-│   ├── Header.tsx        # App header
-│   ├── TimeControls.tsx  # Time simulation controls
-│   └── ui/               # UI components
+│ ├── Globe.tsx # 3D globe visualization
+│ ├── GlobeViewer.tsx # Globe wrapper component
+│ ├── SatelliteViewer.tsx # Main viewer component
+│ ├── Dashboard.tsx # Dashboard container
+│ ├── SatelliteList.tsx # Satellite list component
+│ ├── ConjunctionTable.tsx # Conjunction events table
+│ ├── RiskChart.tsx # Analytics charts
+│ ├── SatelliteDetails.tsx # Satellite info panel
+│ ├── Header.tsx # App header
+│ ├── TimeControls.tsx # Time simulation controls
+│ └── ui/ # UI components
 ├── lib/
-│   ├── types.ts          # TypeScript type definitions
-│   ├── canadianSatellites.ts # Satellite data
-│   ├── satelliteUtils.ts # Orbit propagation utilities
-│   ├── dataService.ts    # API data service
-│   ├── mockData.ts       # Mock conjunction data
-│   └── utils.ts          # Utility functions
-└── public/               # Static assets
+│ ├── types.ts # TypeScript type definitions
+│ ├── canadianSatellites.ts # Satellite data
+│ ├── satelliteUtils.ts # Orbit propagation utilities
+│ ├── dataService.ts # API data service
+│ └── utils.ts # Utility functions
+└── public/ # Static assets
 \`\`\`
 
 ## Development
@@ -149,14 +150,14 @@ Edit `lib/canadianSatellites.ts` and add new satellite entries with TLE data:
 
 \`\`\`typescript
 {
-  noradId: 12345,
-  name: "NEW SATELLITE",
-  line1: "1 12345U ...",
-  line2: "2 12345 ...",
-  launchDate: "2024-01-01",
-  status: "active",
-  operator: "Operator Name",
-  purpose: "Mission Purpose"
+noradId: 12345,
+name: "NEW SATELLITE",
+line1: "1 12345U ...",
+line2: "2 12345 ...",
+launchDate: "2024-01-01",
+status: "active",
+operator: "Operator Name",
+purpose: "Mission Purpose"
 }
 \`\`\`
 
