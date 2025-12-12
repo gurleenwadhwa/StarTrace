@@ -2,16 +2,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { 
-  AlertTriangle, 
-  Clock, 
-  TrendingUp, 
+import {
+  AlertTriangle,
+  Clock,
+  TrendingUp,
   Filter,
   Download,
   RefreshCw,
   Search,
   Calendar,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { ConjunctionEvent } from "@/lib/types";
@@ -20,8 +20,20 @@ import ConjunctionTable from "@/components/ConjunctionTable";
 import RiskChart from "@/components/RiskChart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -30,8 +42,10 @@ export default function ConjunctionAnalysisPage() {
   const [conjunctions, setConjunctions] = useState<ConjunctionEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedSatellite, setSelectedSatellite] = useState<number | null>(null);
-  
+  const [selectedSatellite, setSelectedSatellite] = useState<number | null>(
+    null
+  );
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState<string>("all");
@@ -58,7 +72,9 @@ export default function ConjunctionAnalysisPage() {
         }));
         setConjunctions(processedData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load conjunctions");
+        setError(
+          err instanceof Error ? err.message : "Failed to load conjunctions"
+        );
         console.error("Error fetching conjunctions:", err);
       } finally {
         setLoading(false);
@@ -66,7 +82,7 @@ export default function ConjunctionAnalysisPage() {
     };
 
     fetchConjunctions();
-    
+
     // Refresh every 5 minutes
     const interval = setInterval(fetchConjunctions, 5 * 60 * 1000);
     return () => clearInterval(interval);
@@ -97,7 +113,8 @@ export default function ConjunctionAnalysisPage() {
     if (timeFilter !== "all") {
       const now = new Date();
       filtered = filtered.filter((conj) => {
-        const hoursUntil = (conj.tca.getTime() - now.getTime()) / (1000 * 60 * 60);
+        const hoursUntil =
+          (conj.tca.getTime() - now.getTime()) / (1000 * 60 * 60);
         switch (timeFilter) {
           case "0-6h":
             return hoursUntil >= 0 && hoursUntil < 6;
@@ -143,9 +160,8 @@ export default function ConjunctionAnalysisPage() {
       const hoursUntil = (c.tca.getTime() - now.getTime()) / (1000 * 60 * 60);
       return hoursUntil <= 24 && c.riskLevel === "high";
     }).length;
-    const maxProbability = total > 0 
-      ? Math.max(...conjunctions.map((c) => c.probability))
-      : 0;
+    const maxProbability =
+      total > 0 ? Math.max(...conjunctions.map((c) => c.probability)) : 0;
 
     return { total, high, medium, low, urgent, maxProbability };
   }, [conjunctions]);
@@ -173,7 +189,9 @@ export default function ConjunctionAnalysisPage() {
       }));
       setConjunctions(processedData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh conjunctions");
+      setError(
+        err instanceof Error ? err.message : "Failed to refresh conjunctions"
+      );
     } finally {
       setLoading(false);
     }
@@ -181,7 +199,17 @@ export default function ConjunctionAnalysisPage() {
 
   const handleExport = () => {
     const csv = [
-      ["Satellite 1", "Satellite 2", "NORAD ID 1", "NORAD ID 2", "TCA", "Min Range (km)", "Probability", "Relative Velocity (km/s)", "Risk Level"].join(","),
+      [
+        "Satellite 1",
+        "Satellite 2",
+        "NORAD ID 1",
+        "NORAD ID 2",
+        "TCA",
+        "Min Range (km)",
+        "Probability",
+        "Relative Velocity (km/s)",
+        "Risk Level",
+      ].join(","),
       ...filteredConjunctions.map((c) =>
         [
           c.satellite1,
@@ -201,7 +229,10 @@ export default function ConjunctionAnalysisPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `conjunction-analysis-${format(new Date(), "yyyy-MM-dd-HHmm")}.csv`;
+    a.download = `conjunction-analysis-${format(
+      new Date(),
+      "yyyy-MM-dd-HHmm"
+    )}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -227,7 +258,10 @@ export default function ConjunctionAnalysisPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
                   <AlertTriangle className="h-6 w-6 text-primary" />
                   <h1 className="text-2xl font-bold text-foreground">
                     Conjunction Analysis
@@ -245,7 +279,9 @@ export default function ConjunctionAnalysisPage() {
                 onClick={handleRefresh}
                 disabled={loading}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                />
                 Refresh
               </Button>
               <Button
@@ -272,8 +308,12 @@ export default function ConjunctionAnalysisPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">{stats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">Active events</p>
+              <div className="text-3xl font-bold text-foreground">
+                {stats.total}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Active events
+              </p>
             </CardContent>
           </Card>
 
@@ -284,9 +324,14 @@ export default function ConjunctionAnalysisPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-destructive">{stats.high}</div>
+              <div className="text-3xl font-bold text-destructive">
+                {stats.high}
+              </div>
               <p className="text-xs text-destructive/70 mt-1">
-                {stats.total > 0 ? `${((stats.high / stats.total) * 100).toFixed(1)}%` : "0%"} of total
+                {stats.total > 0
+                  ? `${((stats.high / stats.total) * 100).toFixed(1)}%`
+                  : "0%"}{" "}
+                of total
               </p>
             </CardContent>
           </Card>
@@ -294,12 +339,16 @@ export default function ConjunctionAnalysisPage() {
           <Card className="border-yellow-500/20 bg-yellow-500/5">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-yellow-600">
-                Urgent (< 24h)
+                Urgent ${"< 24h"}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">{stats.urgent}</div>
-              <p className="text-xs text-yellow-600/70 mt-1">High risk within 24h</p>
+              <div className="text-3xl font-bold text-yellow-600">
+                {stats.urgent}
+              </div>
+              <p className="text-xs text-yellow-600/70 mt-1">
+                High risk within 24h
+              </p>
             </CardContent>
           </Card>
 
@@ -314,7 +363,9 @@ export default function ConjunctionAnalysisPage() {
                 {(stats.maxProbability * 100).toExponential(2)}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.maxProbability > 0 ? formatProbability(stats.maxProbability) : "N/A"}
+                {stats.maxProbability > 0
+                  ? formatProbability(stats.maxProbability)
+                  : "N/A"}
               </p>
             </CardContent>
           </Card>
@@ -373,10 +424,16 @@ export default function ConjunctionAnalysisPage() {
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="probability">Probability (High→Low)</SelectItem>
-                  <SelectItem value="minRange">Min Range (Close→Far)</SelectItem>
+                  <SelectItem value="probability">
+                    Probability (High→Low)
+                  </SelectItem>
+                  <SelectItem value="minRange">
+                    Min Range (Close→Far)
+                  </SelectItem>
                   <SelectItem value="tca">Time to TCA (Soon→Later)</SelectItem>
-                  <SelectItem value="relativeVelocity">Relative Velocity (High→Low)</SelectItem>
+                  <SelectItem value="relativeVelocity">
+                    Relative Velocity (High→Low)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -384,7 +441,8 @@ export default function ConjunctionAnalysisPage() {
             {filteredConjunctions.length !== conjunctions.length && (
               <div className="mt-4">
                 <Badge variant="secondary">
-                  Showing {filteredConjunctions.length} of {conjunctions.length} conjunctions
+                  Showing {filteredConjunctions.length} of {conjunctions.length}{" "}
+                  conjunctions
                 </Badge>
               </div>
             )}
@@ -467,5 +525,3 @@ export default function ConjunctionAnalysisPage() {
     </div>
   );
 }
-
-
