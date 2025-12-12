@@ -1,7 +1,8 @@
 "use client";
 
-import { Search, Menu, Satellite } from "lucide-react";
+import { Search, Menu, Satellite, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -29,7 +30,7 @@ export default function Header({
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Satellite className="h-6 w-6 text-primary-foreground" />
           </div>
@@ -41,7 +42,7 @@ export default function Header({
               Real-time Orbital Tracking
             </p>
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="relative w-96">
@@ -56,6 +57,13 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-2">
+        <Link
+          href="/conjunctions"
+          className="flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+        >
+          <AlertTriangle className="h-4 w-4" />
+          Conjunction Analysis
+        </Link>
         <div className="rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent">
           Real-time Satellite Tracking
         </div>
